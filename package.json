@@ -1,6 +1,6 @@
 {
   "name": "@skill-hub/mcp-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP Server for SkillHub - Discover, search, and install Agent Skills",
   "main": "dist/index.js",
   "bin": {
@@ -31,7 +31,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@skill-hub/sdk": "^1.0.0",
+    "@skill-hub/sdk": "^1.0.2",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
   },
