@@ -1,6 +1,6 @@
 {
   "name": "@skill-hub/mcp-server",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "MCP Server for SkillHub - Discover, search, and install Agent Skills",
   "main": "dist/index.js",
   "bin": {

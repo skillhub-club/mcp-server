@@ -27,7 +27,7 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { createClient, type SkillHubClient } from "@skillhub/sdk";
+import { createClient, type SkillHubClient } from "@skill-hub/sdk";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as os from "os";
