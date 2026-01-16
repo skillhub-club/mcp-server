@@ -1,6 +1,6 @@
 {
   "name": "@skill-hub/mcp-server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "MCP Server for SkillHub - Discover, search, and install Agent Skills",
   "main": "dist/index.js",
   "bin": {
@@ -25,13 +25,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/skillhub-club"
+    "url": "https://github.com/skillhub-club/mcp-server"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@skill-hub/sdk": "^1.0.2",
+    "@skill-hub/sdk": "^1.0.6",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
   },

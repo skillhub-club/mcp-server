@@ -21,12 +21,12 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=dev
 
       - name: Build
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
