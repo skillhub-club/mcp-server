@@ -1,4 +1,4 @@
-# @skillhub/mcp-server
+# @skill-hub/mcp-server
 
 MCP Server for [SkillHub](https://www.skillhub.club) - Discover, search, and install Claude Code Skills directly from your AI assistant.
 
@@ -38,7 +38,7 @@ Add to `~/.claude/settings.json`:
   "mcpServers": {
     "skillhub": {
       "command": "npx",
-      "args": ["-y", "@skillhub/mcp-server"],
+      "args": ["-y", "@skill-hub/mcp-server"],
       "env": {
         "SKILLHUB_API_KEY": "your-api-key-here"
       }
@@ -56,7 +56,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "skillhub": {
       "command": "npx",
-      "args": ["-y", "@skillhub/mcp-server"],
+      "args": ["-y", "@skill-hub/mcp-server"],
       "env": {
         "SKILLHUB_API_KEY": "your-api-key-here"
       }
@@ -68,7 +68,7 @@ Add to your `claude_desktop_config.json`:
 ### Manual Installation
 
 ```bash
-npm install -g @skillhub/mcp-server
+npm install -g @skill-hub/mcp-server
 SKILLHUB_API_KEY=your-api-key skillhub-mcp
 ```
 

@@ -389,31 +389,30 @@ async function browseCatalog(
 async function recommendSkills(
   args: z.infer<typeof RecommendSkillsSchema>
 ): Promise<string> {
-  // Use semantic search with context as query, excluding current skills
-  const searchResults = await client.search(args.context, {
+  // Use new publicRecommend API with MMR
+  const recommendations = await (client as any).publicRecommend({
+    query: args.context,
     limit: args.limit + args.current_skills.length,
-    method: "embedding",
-    mmr: true,
     mmr_lambda: 0.7,
-    exclude_ids: args.current_skills,
   });
 
   // Filter out current skills and limit
-  const recommendations = searchResults
-    .filter((r) => !args.current_skills.includes(r.id) && !args.current_skills.includes(r.slug))
+  const filtered = recommendations
+    .filter((r: typeof recommendations[0]) => !args.current_skills.includes(r.id) && !args.current_skills.includes(r.slug))
     .slice(0, args.limit);
 
-  if (recommendations.length === 0) {
+  if (filtered.length === 0) {
     return `No new skill recommendations found for your context. Try browsing the catalog or searching with different keywords.`;
   }
 
-  const results = recommendations
-    .map((s, i) => {
+  const results = filtered
+    .map((s: typeof filtered[0], i: number) => {
       const score = s.simple_score ? `Score: ${s.simple_score}` : "";
       const category = s.category ? `[${s.category}]` : "";
+      const match = s.similarity ? `${(s.similarity * 100).toFixed(0)}%` : "N/A";
       return `${i + 1}. **${s.name}** (${s.slug}) ${category}
    ${s.description || s.description_zh || "No description"}
-   ${score} | Match: ${(s.similarity_score * 100).toFixed(0)}%`;
+   ${score} | Match: ${match}`;
     })
     .join("\n\n");
 
@@ -686,26 +685,78 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  const startTime = Date.now();
+
+  // Track MCP tool call
+  const trackMCPCall = async (success: boolean, error?: string, metadata?: Record<string, unknown>) => {
+    try {
+      const apiBase = SKILLHUB_API_BASE.replace("/api/v1", "");
+      await fetch(`${apiBase}/api/v1/desktop/track`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": `skillhub-mcp-server/${process.env.npm_package_version || "unknown"}`,
+        },
+        body: JSON.stringify({
+          event_type: `mcp.${name}`,
+          event_data: {
+            tool: name,
+            args: args || {},
+            success,
+            error,
+            duration_ms: Date.now() - startTime,
+            ...metadata,
+          },
+          source: "mcp_server",
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {
+        // Silently fail - tracking should never break MCP
+      });
+    } catch {
+      // Silently fail
+    }
+  };
 
   try {
     let result: string;
 
     switch (name) {
-      case "search_skills":
-        result = await searchSkills(SearchSkillsSchema.parse(args));
+      case "search_skills": {
+        const parsedArgs = SearchSkillsSchema.parse(args);
+        result = await searchSkills(parsedArgs);
+        await trackMCPCall(true, undefined, { query: parsedArgs.query });
         break;
-      case "get_skill_detail":
-        result = await getSkillDetail(GetSkillDetailSchema.parse(args));
+      }
+      case "get_skill_detail": {
+        const parsedArgs = GetSkillDetailSchema.parse(args);
+        result = await getSkillDetail(parsedArgs);
+        await trackMCPCall(true, undefined, { skill_id: parsedArgs.skill_id });
         break;
-      case "install_skill":
-        result = await installSkill(InstallSkillSchema.parse(args));
+      }
+      case "install_skill": {
+        const parsedArgs = InstallSkillSchema.parse(args);
+        result = await installSkill(parsedArgs);
+        await trackMCPCall(true, undefined, { skill_id: parsedArgs.skill_id });
         break;
-      case "browse_catalog":
-        result = await browseCatalog(BrowseCatalogSchema.parse(args));
+      }
+      case "browse_catalog": {
+        const parsedArgs = BrowseCatalogSchema.parse(args);
+        result = await browseCatalog(parsedArgs);
+        await trackMCPCall(true, undefined, { 
+          category: parsedArgs.category,
+          sort: parsedArgs.sort,
+        });
         break;
-      case "recommend_skills":
-        result = await recommendSkills(RecommendSkillsSchema.parse(args));
+      }
+      case "recommend_skills": {
+        const parsedArgs = RecommendSkillsSchema.parse(args);
+        result = await recommendSkills(parsedArgs);
+        await trackMCPCall(true, undefined, { 
+          context: parsedArgs.context?.substring(0, 100),
+        });
         break;
+      }
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -715,6 +766,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    await trackMCPCall(false, message);
     return {
       content: [{ type: "text", text: `Error: ${message}` }],
       isError: true,
